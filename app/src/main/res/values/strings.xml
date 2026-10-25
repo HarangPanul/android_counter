@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Counter</string>
+    <string name="reset">초기화</string>
+    <string name="count_description">현재 카운트</string>
+</resources>
