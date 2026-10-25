@@ -20,6 +20,7 @@ class MainActivity : ComponentActivity() {
                 CounterScreen(
                     count = count,
                     onIncrement = viewModel::increment,
+                    onDecrement = viewModel::decrement,
                     onReset = viewModel::reset,
                 )
             }

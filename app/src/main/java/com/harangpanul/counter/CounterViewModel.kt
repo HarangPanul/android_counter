@@ -24,6 +24,8 @@ class CounterViewModel(application: Application) : AndroidViewModel(application)
 
     fun increment() = update(_count.value + 1)
 
+    fun decrement() = update((_count.value - 1).coerceAtLeast(0))
+
     fun reset() = update(0)
 
     private fun update(value: Int) {

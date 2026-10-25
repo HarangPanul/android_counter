@@ -2,13 +2,16 @@ package com.harangpanul.counter.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -26,11 +29,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.harangpanul.counter.R
 
-/** 화면 전체가 +1 버튼이고, 하단 동그란 버튼이 초기화 버튼이다. */
+/** 화면 전체가 +1 버튼이고, 하단의 동그란 버튼 두 개가 각각 -1과 초기화 버튼이다. */
 @Composable
 fun CounterScreen(
     count: Int,
     onIncrement: () -> Unit,
+    onDecrement: () -> Unit,
     onReset: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -60,22 +64,38 @@ fun CounterScreen(
                     .align(Alignment.Center)
                     .semantics { contentDescription = "$description $count" },
             )
-            // 자식 clickable이 터치를 소비하므로 리셋 시 +1이 함께 실행되지 않는다.
-            FilledIconButton(
-                onClick = {
-                    vibrations.reset()
-                    onReset()
-                },
+            // 자식 clickable이 터치를 소비하므로 버튼을 눌러도 +1이 함께 실행되지 않는다.
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(24.dp),
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .navigationBarsPadding()
-                    .padding(bottom = 32.dp)
-                    .size(64.dp),
+                    .padding(bottom = 32.dp),
             ) {
-                Icon(
-                    imageVector = Icons.Filled.Refresh,
-                    contentDescription = stringResource(R.string.reset),
-                )
+                FilledIconButton(
+                    onClick = {
+                        vibrations.increment()
+                        onDecrement()
+                    },
+                    modifier = Modifier.size(64.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Remove,
+                        contentDescription = stringResource(R.string.decrement),
+                    )
+                }
+                FilledIconButton(
+                    onClick = {
+                        vibrations.reset()
+                        onReset()
+                    },
+                    modifier = Modifier.size(64.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Refresh,
+                        contentDescription = stringResource(R.string.reset),
+                    )
+                }
             }
         }
     }
