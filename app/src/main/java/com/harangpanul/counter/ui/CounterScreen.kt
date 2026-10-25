@@ -18,6 +18,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -34,6 +36,7 @@ fun CounterScreen(
     modifier: Modifier = Modifier,
 ) {
     val description = stringResource(R.string.count_description)
+    val haptic = LocalHapticFeedback.current
 
     Surface(
         modifier = modifier
@@ -41,7 +44,10 @@ fun CounterScreen(
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
-                onClick = onIncrement,
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove) // 짧은 틱
+                    onIncrement()
+                },
             ),
         color = MaterialTheme.colorScheme.background,
     ) {
@@ -56,7 +62,10 @@ fun CounterScreen(
             )
             // 자식 clickable이 터치를 소비하므로 리셋 시 +1이 함께 실행되지 않는다.
             FilledIconButton(
-                onClick = onReset,
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress) // 더 묵직한 진동
+                    onReset()
+                },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .navigationBarsPadding()
