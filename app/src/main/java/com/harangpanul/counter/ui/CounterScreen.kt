@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +38,7 @@ fun CounterScreen(
     modifier: Modifier = Modifier,
 ) {
     val description = stringResource(R.string.count_description)
+    val decrementDescription = stringResource(R.string.decrement)
     val context = LocalContext.current
     val vibrations = remember(context) { Vibrations(context) }
 
@@ -79,9 +79,13 @@ fun CounterScreen(
                     },
                     modifier = Modifier.size(64.dp),
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.Remove,
-                        contentDescription = stringResource(R.string.decrement),
+                    // Icons.Filled.Remove는 material-icons-extended에만 있어 텍스트로 그린다.
+                    Text(
+                        text = "−",
+                        fontSize = 32.sp,
+                        modifier = Modifier.semantics {
+                            contentDescription = decrementDescription
+                        },
                     )
                 }
                 FilledIconButton(
