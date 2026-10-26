@@ -96,10 +96,6 @@ class FloatingCounterService : Service() {
             text = "−"
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 26f)
             contentDescription = getString(R.string.decrement)
-            setOnClickListener {
-                vibrations.increment()
-                scope.launch { repository.decrement() }
-            }
         }
         val countView = circle(Color.argb(0xFF, 0x3F, 0x51, 0xB5)).apply {
             contentDescription = getString(R.string.count_description)
@@ -142,9 +138,28 @@ class FloatingCounterService : Service() {
             y = (160 * density).toInt()
         }
 
-        countView.setOnTouchListener(DragTouchListener(params, root, countActions = true))
+        minus.setOnTouchListener(
+            DragTouchListener(params, root, onTap = {
+                vibrations.increment()
+                scope.launch { repository.decrement() }
+            }),
+        )
+        countView.setOnTouchListener(
+            DragTouchListener(
+                params,
+                root,
+                onTap = {
+                    vibrations.increment()
+                    scope.launch { repository.increment() }
+                },
+                onLongPress = {
+                    vibrations.reset()
+                    scope.launch { repository.reset() }
+                },
+            ),
+        )
         // 알약의 빈 가장자리는 드래그만 한다. 자식 뷰가 소비하지 않은 터치만 여기로 온다.
-        root.setOnTouchListener(DragTouchListener(params, root, countActions = false))
+        root.setOnTouchListener(DragTouchListener(params, root))
         windowManager.addView(root, params)
         bubble = root
 
@@ -166,7 +181,8 @@ class FloatingCounterService : Service() {
     private inner class DragTouchListener(
         private val params: WindowManager.LayoutParams,
         private val view: android.view.View,
-        private val countActions: Boolean,
+        private val onTap: (() -> Unit)? = null,
+        private val onLongPress: (() -> Unit)? = null,
     ) : android.view.View.OnTouchListener {
         private val slop = ViewConfiguration.get(this@FloatingCounterService).scaledTouchSlop
         private var startX = 0
@@ -177,8 +193,7 @@ class FloatingCounterService : Service() {
         private var longPressed = false
         private val longPress = Runnable {
             longPressed = true
-            vibrations.reset()
-            scope.launch { repository.reset() }
+            onLongPress?.invoke()
         }
 
         override fun onTouch(v: android.view.View, event: MotionEvent): Boolean {
@@ -190,7 +205,7 @@ class FloatingCounterService : Service() {
                     downRawY = event.rawY
                     dragging = false
                     longPressed = false
-                    if (countActions) {
+                    if (onLongPress != null) {
                         handler.postDelayed(longPress, ViewConfiguration.getLongPressTimeout().toLong())
                     }
                 }
@@ -209,10 +224,7 @@ class FloatingCounterService : Service() {
                 }
                 MotionEvent.ACTION_UP -> {
                     handler.removeCallbacks(longPress)
-                    if (countActions && !dragging && !longPressed) {
-                        vibrations.increment()
-                        scope.launch { repository.increment() }
-                    }
+                    if (!dragging && !longPressed) onTap?.invoke()
                 }
                 MotionEvent.ACTION_CANCEL -> handler.removeCallbacks(longPress)
             }
