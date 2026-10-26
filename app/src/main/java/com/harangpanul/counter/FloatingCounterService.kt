@@ -23,6 +23,7 @@ import android.view.Gravity
 import android.view.MotionEvent
 import android.view.ViewConfiguration
 import android.view.WindowManager
+import android.widget.LinearLayout
 import android.widget.TextView
 import com.harangpanul.counter.data.CounterRepository
 import com.harangpanul.counter.ui.Vibrations
@@ -36,7 +37,7 @@ import kotlinx.coroutines.launch
 
 /**
  * 다른 앱 위에 동그란 카운터를 띄운다.
- * 탭: +1, 길게 누르기: 초기화, 드래그: 위치 이동.
+ * 가운데 숫자 탭: +1, 길게 누르기: 초기화, 드래그: 위치 이동. 왼쪽 − 버튼: -1.
  */
 class FloatingCounterService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -44,7 +45,7 @@ class FloatingCounterService : Service() {
     private lateinit var repository: CounterRepository
     private lateinit var vibrations: Vibrations
     private lateinit var windowManager: WindowManager
-    private var bubble: TextView? = null
+    private var bubble: LinearLayout? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -79,22 +80,48 @@ class FloatingCounterService : Service() {
     @SuppressLint("ClickableViewAccessibility")
     private fun addBubble() {
         val density = resources.displayMetrics.density
-        val size = (BUBBLE_DP * density).toInt()
-        val view = TextView(this).apply {
+        fun circle(sizeDp: Int, color: Int) = TextView(this).apply {
+            layoutParams = LinearLayout.LayoutParams((sizeDp * density).toInt(), (sizeDp * density).toInt())
             gravity = Gravity.CENTER
             setTextColor(Color.WHITE)
             typeface = Typeface.DEFAULT_BOLD
             background = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
-                setColor(Color.argb(0xE6, 0x3F, 0x51, 0xB5))
+                setColor(color)
                 setStroke((2 * density).toInt(), Color.WHITE)
             }
             elevation = 6 * density
+        }
+
+        val minus = circle(MINUS_DP, Color.argb(0xE6, 0x75, 0x75, 0x75)).apply {
+            text = "−"
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 26f)
+            contentDescription = getString(R.string.decrement)
+            setOnClickListener {
+                vibrations.increment()
+                scope.launch { repository.decrement() }
+            }
+        }
+        val countView = circle(BUBBLE_DP, Color.argb(0xE6, 0x3F, 0x51, 0xB5)).apply {
             contentDescription = getString(R.string.count_description)
         }
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            // 버블 둘레 그림자/테두리가 잘리지 않게 여백을 둔다.
+            val pad = (4 * density).toInt()
+            setPadding(pad, pad, pad, pad)
+            addView(minus)
+            addView(
+                countView,
+                (countView.layoutParams as LinearLayout.LayoutParams).apply {
+                    marginStart = (8 * density).toInt()
+                },
+            )
+        }
         val params = WindowManager.LayoutParams(
-            size,
-            size,
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
             } else {
@@ -109,14 +136,14 @@ class FloatingCounterService : Service() {
             y = (160 * density).toInt()
         }
 
-        view.setOnTouchListener(DragTouchListener(params, view))
-        windowManager.addView(view, params)
-        bubble = view
+        countView.setOnTouchListener(DragTouchListener(params, root))
+        windowManager.addView(root, params)
+        bubble = root
 
         repository.count
             .onEach { count ->
-                view.text = count.toString()
-                view.setTextSize(
+                countView.text = count.toString()
+                countView.setTextSize(
                     TypedValue.COMPLEX_UNIT_SP,
                     when {
                         count < 1_000 -> 26f
@@ -130,7 +157,7 @@ class FloatingCounterService : Service() {
 
     private inner class DragTouchListener(
         private val params: WindowManager.LayoutParams,
-        private val view: TextView,
+        private val view: android.view.View,
     ) : android.view.View.OnTouchListener {
         private val slop = ViewConfiguration.get(this@FloatingCounterService).scaledTouchSlop
         private var startX = 0
@@ -231,6 +258,7 @@ class FloatingCounterService : Service() {
         private const val NOTIFICATION_ID = 1
         private const val ACTION_STOP = "com.harangpanul.counter.action.STOP_FLOATING"
         private const val BUBBLE_DP = 72
+        private const val MINUS_DP = 52
 
         @Volatile
         var running = false
