@@ -142,7 +142,9 @@ class FloatingCounterService : Service() {
             y = (160 * density).toInt()
         }
 
-        countView.setOnTouchListener(DragTouchListener(params, root))
+        countView.setOnTouchListener(DragTouchListener(params, root, countActions = true))
+        // 알약의 빈 가장자리는 드래그만 한다. 자식 뷰가 소비하지 않은 터치만 여기로 온다.
+        root.setOnTouchListener(DragTouchListener(params, root, countActions = false))
         windowManager.addView(root, params)
         bubble = root
 
@@ -164,6 +166,7 @@ class FloatingCounterService : Service() {
     private inner class DragTouchListener(
         private val params: WindowManager.LayoutParams,
         private val view: android.view.View,
+        private val countActions: Boolean,
     ) : android.view.View.OnTouchListener {
         private val slop = ViewConfiguration.get(this@FloatingCounterService).scaledTouchSlop
         private var startX = 0
@@ -187,7 +190,9 @@ class FloatingCounterService : Service() {
                     downRawY = event.rawY
                     dragging = false
                     longPressed = false
-                    handler.postDelayed(longPress, ViewConfiguration.getLongPressTimeout().toLong())
+                    if (countActions) {
+                        handler.postDelayed(longPress, ViewConfiguration.getLongPressTimeout().toLong())
+                    }
                 }
                 MotionEvent.ACTION_MOVE -> {
                     val dx = event.rawX - downRawX
@@ -204,7 +209,7 @@ class FloatingCounterService : Service() {
                 }
                 MotionEvent.ACTION_UP -> {
                     handler.removeCallbacks(longPress)
-                    if (!dragging && !longPressed) {
+                    if (countActions && !dragging && !longPressed) {
                         vibrations.increment()
                         scope.launch { repository.increment() }
                     }
