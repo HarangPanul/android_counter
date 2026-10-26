@@ -4,32 +4,27 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.harangpanul.counter.data.CounterRepository
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class CounterViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = CounterRepository(application)
 
-    private val _count = MutableStateFlow(0)
-    val count: StateFlow<Int> = _count.asStateFlow()
+    // 플로팅 서비스도 같은 저장소를 갱신하므로 저장소를 단일 진실 공급원으로 구독한다.
+    val count: StateFlow<Int> = repository.count
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
-    init {
-        viewModelScope.launch {
-            _count.value = repository.count.first()
-        }
+    fun increment() {
+        viewModelScope.launch { repository.increment() }
     }
 
-    fun increment() = update(_count.value + 1)
+    fun decrement() {
+        viewModelScope.launch { repository.decrement() }
+    }
 
-    fun decrement() = update((_count.value - 1).coerceAtLeast(0))
-
-    fun reset() = update(0)
-
-    private fun update(value: Int) {
-        _count.value = value
-        viewModelScope.launch { repository.setCount(value) }
+    fun reset() {
+        viewModelScope.launch { repository.reset() }
     }
 }

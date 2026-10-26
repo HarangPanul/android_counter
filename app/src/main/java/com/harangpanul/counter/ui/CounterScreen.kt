@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -15,6 +16,7 @@ import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -35,6 +37,7 @@ fun CounterScreen(
     onIncrement: () -> Unit,
     onDecrement: () -> Unit,
     onReset: () -> Unit,
+    onFloating: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val description = stringResource(R.string.count_description)
@@ -64,6 +67,15 @@ fun CounterScreen(
                     .align(Alignment.Center)
                     .semantics { contentDescription = "$description $count" },
             )
+            TextButton(
+                onClick = onFloating,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .statusBarsPadding()
+                    .padding(8.dp),
+            ) {
+                Text(stringResource(R.string.floating_mode))
+            }
             // 자식 clickable이 터치를 소비하므로 버튼을 눌러도 +1이 함께 실행되지 않는다.
             Row(
                 horizontalArrangement = Arrangement.spacedBy(24.dp),

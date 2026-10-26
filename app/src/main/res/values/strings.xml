@@ -3,4 +3,9 @@
     <string name="reset">초기화</string>
     <string name="decrement">1 감소</string>
     <string name="count_description">현재 카운트</string>
+    <string name="floating_mode">플로팅</string>
+    <string name="floating_channel">플로팅 카운터</string>
+    <string name="floating_notification_title">플로팅 카운터 실행 중</string>
+    <string name="floating_close">닫기</string>
+    <string name="floating_permission_needed">다른 앱 위에 표시 권한을 허용한 뒤 다시 눌러 주세요</string>
 </resources>
