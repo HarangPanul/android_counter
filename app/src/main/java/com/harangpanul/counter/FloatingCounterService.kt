@@ -80,20 +80,19 @@ class FloatingCounterService : Service() {
     @SuppressLint("ClickableViewAccessibility")
     private fun addBubble() {
         val density = resources.displayMetrics.density
-        fun circle(sizeDp: Int, color: Int) = TextView(this).apply {
-            layoutParams = LinearLayout.LayoutParams((sizeDp * density).toInt(), (sizeDp * density).toInt())
+        fun circle(color: Int) = TextView(this).apply {
+            val size = (CIRCLE_DP * density).toInt()
+            layoutParams = LinearLayout.LayoutParams(size, size)
             gravity = Gravity.CENTER
             setTextColor(Color.WHITE)
             typeface = Typeface.DEFAULT_BOLD
             background = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
                 setColor(color)
-                setStroke((2 * density).toInt(), Color.WHITE)
             }
-            elevation = 6 * density
         }
 
-        val minus = circle(MINUS_DP, Color.argb(0xE6, 0x75, 0x75, 0x75)).apply {
+        val minus = circle(Color.argb(0xFF, 0x75, 0x75, 0x75)).apply {
             text = "−"
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 26f)
             contentDescription = getString(R.string.decrement)
@@ -102,20 +101,27 @@ class FloatingCounterService : Service() {
                 scope.launch { repository.decrement() }
             }
         }
-        val countView = circle(BUBBLE_DP, Color.argb(0xE6, 0x3F, 0x51, 0xB5)).apply {
+        val countView = circle(Color.argb(0xFF, 0x3F, 0x51, 0xB5)).apply {
             contentDescription = getString(R.string.count_description)
         }
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            // 버블 둘레 그림자/테두리가 잘리지 않게 여백을 둔다.
-            val pad = (4 * density).toInt()
+            // 두 원을 감싸는 알약 모양 배경. 높이의 절반을 반지름으로 주면 양끝이 완전히 둥글어진다.
+            val pad = (PILL_PADDING_DP * density).toInt()
             setPadding(pad, pad, pad, pad)
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = (CIRCLE_DP / 2 + PILL_PADDING_DP) * density
+                setColor(Color.argb(0xE6, 0x21, 0x21, 0x21))
+                setStroke((2 * density).toInt(), Color.WHITE)
+            }
+            elevation = 6 * density
             addView(minus)
             addView(
                 countView,
                 (countView.layoutParams as LinearLayout.LayoutParams).apply {
-                    marginStart = (8 * density).toInt()
+                    marginStart = (PILL_PADDING_DP * density).toInt()
                 },
             )
         }
@@ -257,8 +263,8 @@ class FloatingCounterService : Service() {
         private const val CHANNEL_ID = "floating_counter"
         private const val NOTIFICATION_ID = 1
         private const val ACTION_STOP = "com.harangpanul.counter.action.STOP_FLOATING"
-        private const val BUBBLE_DP = 72
-        private const val MINUS_DP = 52
+        private const val CIRCLE_DP = 56
+        private const val PILL_PADDING_DP = 6
 
         @Volatile
         var running = false
