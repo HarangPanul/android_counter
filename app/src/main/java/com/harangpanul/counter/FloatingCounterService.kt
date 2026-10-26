@@ -31,13 +31,16 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 /**
  * 다른 앱 위에 동그란 카운터를 띄운다.
- * 가운데 숫자 탭: +1, 길게 누르기: 초기화, 드래그: 위치 이동. 왼쪽 − 버튼: -1.
+ * 가운데 숫자 탭: +1, 길게 누르기: 초기화, 드래그: 위치 이동. 왼쪽 − 버튼 탭: -1, 길게 누르면 플로팅 종료.
  */
 class FloatingCounterService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -59,7 +62,7 @@ class FloatingCounterService : Service() {
             stopSelf()
             return
         }
-        running = true
+        _running.value = true
         addBubble()
     }
 
@@ -69,7 +72,7 @@ class FloatingCounterService : Service() {
     }
 
     override fun onDestroy() {
-        running = false
+        _running.value = false
         handler.removeCallbacksAndMessages(null)
         bubble?.let { runCatching { windowManager.removeView(it) } }
         bubble = null
@@ -139,10 +142,19 @@ class FloatingCounterService : Service() {
         }
 
         minus.setOnTouchListener(
-            DragTouchListener(params, root, onTap = {
-                vibrations.increment()
-                scope.launch { repository.decrement() }
-            }),
+            DragTouchListener(
+                params,
+                root,
+                onTap = {
+                    vibrations.increment()
+                    scope.launch { repository.decrement() }
+                },
+                // 알림 권한을 거부하면 알림의 "닫기"가 보이지 않으므로 알약에서도 끌 수 있게 한다.
+                onLongPress = {
+                    vibrations.reset()
+                    stopSelf()
+                },
+            ),
         )
         countView.setOnTouchListener(
             DragTouchListener(
@@ -283,9 +295,14 @@ class FloatingCounterService : Service() {
         private const val CIRCLE_DP = 56
         private const val PILL_PADDING_DP = 6
 
-        @Volatile
-        var running = false
-            private set
+        private val _running = MutableStateFlow(false)
+
+        /** 플로팅 알약이 화면에 떠 있는지 여부. 앱 화면의 버튼이 켜짐/꺼짐 상태를 보여주는 데 쓴다. */
+        val running: StateFlow<Boolean> = _running.asStateFlow()
+
+        fun stop(context: Context) {
+            context.stopService(Intent(context, FloatingCounterService::class.java))
+        }
 
         fun start(context: Context) {
             val intent = Intent(context, FloatingCounterService::class.java)

@@ -1,5 +1,6 @@
 package com.harangpanul.counter.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -23,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -38,6 +40,7 @@ fun CounterScreen(
     onIncrement: () -> Unit,
     onDecrement: () -> Unit,
     onReset: () -> Unit,
+    floatingActive: Boolean,
     onFloating: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -113,6 +116,11 @@ fun CounterScreen(
                     Box(
                         modifier = Modifier
                             .size(width = 28.dp, height = 16.dp)
+                            // 플로팅 실행 중이면 알약을 채워서, 다시 누르면 꺼진다는 것을 보여준다.
+                            .background(
+                                if (floatingActive) LocalContentColor.current else Color.Transparent,
+                                CircleShape,
+                            )
                             .border(2.dp, LocalContentColor.current, CircleShape)
                             .semantics {
                                 contentDescription = floatingDescription

@@ -24,12 +24,16 @@ class MainActivity : ComponentActivity() {
         setContent {
             CounterTheme {
                 val count by viewModel.count.collectAsState()
+                val floatingActive by FloatingCounterService.running.collectAsState()
                 CounterScreen(
                     count = count,
                     onIncrement = viewModel::increment,
                     onDecrement = viewModel::decrement,
                     onReset = viewModel::reset,
-                    onFloating = ::startFloating,
+                    floatingActive = floatingActive,
+                    onFloating = {
+                        if (floatingActive) FloatingCounterService.stop(this) else startFloating()
+                    },
                 )
             }
         }
