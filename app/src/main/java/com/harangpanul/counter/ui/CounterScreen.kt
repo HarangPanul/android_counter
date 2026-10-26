@@ -1,5 +1,6 @@
 package com.harangpanul.counter.ui
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -7,16 +8,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -30,7 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.harangpanul.counter.R
 
-/** 화면 전체가 +1 버튼이고, 하단의 동그란 버튼 두 개가 각각 -1과 초기화 버튼이다. */
+/** 화면 전체가 +1 버튼이고, 하단의 동그란 버튼 세 개가 각각 -1, 초기화, 플로팅 모드 진입 버튼이다. */
 @Composable
 fun CounterScreen(
     count: Int,
@@ -41,6 +42,7 @@ fun CounterScreen(
     modifier: Modifier = Modifier,
 ) {
     val description = stringResource(R.string.count_description)
+    val floatingDescription = stringResource(R.string.floating_mode)
     val decrementDescription = stringResource(R.string.decrement)
     val context = LocalContext.current
     val vibrations = remember(context) { Vibrations(context) }
@@ -67,15 +69,6 @@ fun CounterScreen(
                     .align(Alignment.Center)
                     .semantics { contentDescription = "$description $count" },
             )
-            TextButton(
-                onClick = onFloating,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .statusBarsPadding()
-                    .padding(8.dp),
-            ) {
-                Text(stringResource(R.string.floating_mode))
-            }
             // 자식 clickable이 터치를 소비하므로 버튼을 눌러도 +1이 함께 실행되지 않는다.
             Row(
                 horizontalArrangement = Arrangement.spacedBy(24.dp),
@@ -110,6 +103,20 @@ fun CounterScreen(
                     Icon(
                         imageVector = Icons.Filled.Refresh,
                         contentDescription = stringResource(R.string.reset),
+                    )
+                }
+                FilledIconButton(
+                    onClick = onFloating,
+                    modifier = Modifier.size(64.dp),
+                ) {
+                    // 오버레이 알약 모양을 본뜬 아이콘. 기본 아이콘 세트에 마땅한 것이 없어 직접 그린다.
+                    Box(
+                        modifier = Modifier
+                            .size(width = 28.dp, height = 16.dp)
+                            .border(2.dp, LocalContentColor.current, CircleShape)
+                            .semantics {
+                                contentDescription = floatingDescription
+                            },
                     )
                 }
             }
